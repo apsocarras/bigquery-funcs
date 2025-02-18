@@ -8,7 +8,6 @@ dependencies = [
     "functag>=1.2.6",
     "google-cloud-bigquery>=3.29.0",
     "google-cloud-secret-manager>=2.23.0",
-    "useful-types>=0.2.1",
 ]
 
 [dependency-groups]
