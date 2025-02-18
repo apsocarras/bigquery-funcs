@@ -37,7 +37,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version-file: ".python-version"
-      - name: Create venv
+      - name: Create venv and install package
         run: |
           uv venv
           if [ $RUNNER_OS != 'Windows' ]; then
@@ -45,7 +45,8 @@ jobs:
           else
             .venv\Scripts\activate
           fi
-      - name: Install package
-        run: uv pip install -e .
+          uv pip install -e . 
+        shell: bash
+        
       - name: Run tests
         run: uv run pytest tests/ --maxfail=1 --disable-warnings
