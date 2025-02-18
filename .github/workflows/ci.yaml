@@ -35,11 +35,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-        with: 
+        with:
           python-version-file: ".python-version"
-      - name: Create venv 
-      - run: uv venv && source .venv/bin/activate 
-      - name: Install package 
-      - run: uv pip install -e .
+      - name: Create venv
+        run: |
+          uv venv
+          if [ $RUNNER_OS != 'Windows' ]; then
+            source .venv/bin/activate
+          else
+            .venv\Scripts\activate
+          fi
+      - name: Install package
+        run: uv pip install -e .
       - name: Run tests
-      - run: uv run pytest tests/
+        run: uv run pytest tests/ --maxfail=1 --disable-warnings
