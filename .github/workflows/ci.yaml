@@ -38,14 +38,10 @@ jobs:
         with:
           python-version-file: ".python-version"
       - name: Create venv
-        run: |
-          uv venv
-          if [ $RUNNER_OS != 'Windows' ]; then
-            source .venv/bin/activate
-          else
-            .venv\Scripts\activate
-          fi
+      - run: uv venv && source .venv/bin/activate
+        shell: bash
       - name: Install package
         run: uv pip install -e .
       - name: Run tests
-        run: uv run pytest tests/ --maxfail=1 --disable-warnings
+        run: uv run pytest tests/ --maxfail=1 --disable-warnings        
+        shell: bash
