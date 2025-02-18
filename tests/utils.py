@@ -1,5 +1,6 @@
 import os
 
+import sqlglot
 from sqlglot import transpile
 from sqlglot.dialects.bigquery import BigQuery
 from sqlglot.errors import ParseError
@@ -21,3 +22,9 @@ def del_vars(monkeypatch, vars: list[str]):
     for var in vars:
         monkeypatch.delenv(var, raising=False)
     assert not any(os.getenv(var, None) for var in vars)  # ensure that deletion worked
+
+
+def are_same_parsed_query(query1: str, query2: str):
+    q1_parsed = sqlglot.parse_one(query1).sql()
+    q2_parsed = sqlglot.parse_one(query2).sql()
+    return q1_parsed == q2_parsed

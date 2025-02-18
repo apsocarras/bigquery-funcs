@@ -1,10 +1,14 @@
+import logging
+
 import pytest
 from faker import Faker
 
 from bigquery_funcs._types import LatLon
-from bigquery_funcs.queries import structify
+from bigquery_funcs.queries import make_unnest_cte, structify
 
-from .utils import is_valid_query
+from .utils import are_same_parsed_query, is_valid_query
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -43,4 +47,59 @@ def test_structify(
     struct_tuple2 = structify(data=rand_lat_lons, aliases=aliases)
     query_str = f"""SELECT {",".join(aliases)} FROM UNNEST([{struct_tuple2}])"""
     is_valid, error_msg = is_valid_query(query_str)
+    assert is_valid, error_msg
+
+
+def test_make_unnest_cte_query(
+    rand_lat_lons: tuple[LatLon, ...], known_lat_lons: tuple[LatLon, ...]
+) -> None:
+    cte_name = "latlon_cte"
+    aliases = ["point"]
+
+    ## Test with a known set of points
+    result_cte = make_unnest_cte(known_lat_lons, cte_name, aliases, as_points=True)
+    expected_cte = f"""
+        WITH {cte_name} AS (
+            SELECT * 
+            FROM UNNEST([
+                ST_GEOGPOINT(4, 2),
+                ST_GEOGPOINT(3, 1)
+            ]) {aliases[0]}
+        )
+    """.strip()
+
+    assert are_same_parsed_query(
+        query1=f"{result_cte} SELECT * FROM {cte_name}",
+        query2=f"{expected_cte} SELECT * FROM {cte_name}",
+    ), f"result: {result_cte}, expected: {expected_cte}"
+
+    # Test with random set that it produces a valid query in bigquery
+    result_cte = make_unnest_cte(rand_lat_lons, cte_name, aliases, as_points=True)
+    is_valid, error_msg = is_valid_query(f"{result_cte} SELECT * FROM {cte_name}")
+    assert is_valid, error_msg
+
+    # Test with as_points off
+    result_cte = make_unnest_cte(
+        known_lat_lons, cte_name, aliases=["lat", "lon"], as_points=False
+    )
+    expected_cte = f"""
+        WITH {cte_name} AS (
+            SELECT lat, lon 
+            FROM UNNEST([
+                STRUCT(2 AS lat, 4 AS lon),
+                STRUCT(1 AS lat, 3 AS lon)
+            ])
+        )
+    """.strip()
+
+    assert are_same_parsed_query(
+        query1=f"{result_cte} SELECT * FROM {cte_name}",
+        query2=f"{expected_cte} SELECT * FROM {cte_name}",
+    ), f"result: {result_cte}, expected: {expected_cte}"
+
+    # Test with random set that it produces a valid query in bigquery
+    result_cte = make_unnest_cte(
+        rand_lat_lons, cte_name, aliases=["lat", "lon"], as_points=False
+    )
+    is_valid, error_msg = is_valid_query(f"{result_cte} SELECT * FROM {cte_name}")
     assert is_valid, error_msg
