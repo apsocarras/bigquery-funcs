@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from types import ModuleType
 
 logging.getLogger("faker").setLevel(logging.CRITICAL)
 # Configure logging.
@@ -24,7 +25,7 @@ console_handler.setLevel(logging.DEBUG)
 try:
     import importlib
 
-    colorlog = importlib.import_module(
+    colorlog: ModuleType = importlib.import_module(
         "colorlog"
     )  # `pip install colorlog` for extra goodies.
 
