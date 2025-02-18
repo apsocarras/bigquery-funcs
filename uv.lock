@@ -43,6 +43,7 @@ dependencies = [
     { name = "functag" },
     { name = "google-cloud-bigquery" },
     { name = "google-cloud-secret-manager" },
+    { name = "python-dotenv" },
 ]
 
 [package.dev-dependencies]
@@ -50,15 +51,15 @@ dev = [
     { name = "basedpyright" },
     { name = "ipykernel" },
     { name = "pytest" },
-    { name = "python-dotenv" },
     { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "functag", specifier = ">=1.2.6" },
+    { name = "functag", specifier = ">=1.2.7" },
     { name = "google-cloud-bigquery", specifier = ">=3.29.0" },
     { name = "google-cloud-secret-manager", specifier = ">=2.23.0" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -66,7 +67,6 @@ dev = [
     { name = "basedpyright", specifier = ">=1.27.1" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "pytest", specifier = ">=8.3.4" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "ruff", specifier = ">=0.9.6" },
 ]
 
@@ -214,11 +214,11 @@ wheels = [
 
 [[package]]
 name = "functag"
-version = "1.2.6"
+version = "1.2.7"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4c/79/06f45b6f314fd769df126d3336e661db4ac304a7db791879003ad6f81064/functag-1.2.6.tar.gz", hash = "sha256:3b04bacc05f934507d990897e887157c8ebd50251ffc304416730cfd73c935ce", size = 27223 }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/0b/5d8f661961ec65b8ee14ce5d4fc7b90da1a7bd101806eb498e1526d0690f/functag-1.2.7.tar.gz", hash = "sha256:916fe7d3e64558effc68ff689725f3b8e806929909a17fe216fbafa671b52c73", size = 27278 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b3/e1/8d381b69fdd48a3c68349d672841e0846de9390e37c9926e0843972d258b/functag-1.2.6-py3-none-any.whl", hash = "sha256:ced5a5b2e67c14c73c92c16d3634ce8a699fe2bc22111d0a89d3f4266d09e58c", size = 4067 },
+    { url = "https://files.pythonhosted.org/packages/f2/07/e75feb49f0890828f0db0f006445ebe6cf2afa6e0e2051dd9a89a398d1d7/functag-1.2.7-py3-none-any.whl", hash = "sha256:90fa338c803204a5cd272f9311267b7ba77dd0b68c9d269c45ef024c98210cdd", size = 4065 },
 ]
 
 [[package]]

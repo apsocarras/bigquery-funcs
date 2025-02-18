@@ -2,9 +2,9 @@ import os
 from dataclasses import dataclass, fields
 from pathlib import Path
 
+import google.cloud.secretmanager as secretmanager
 from dotenv import load_dotenv
 from google.auth.exceptions import DefaultCredentialsError
-from google.cloud import secretmanager
 from google.oauth2 import service_account
 
 from ._types import SecretContextType
