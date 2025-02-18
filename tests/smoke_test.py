@@ -1,3 +1,7 @@
+from unittest.mock import MagicMock
+
+import google.cloud.bigquery as bigquery
+
 from bigquery_funcs.auth import ApplicationCredentials
 from bigquery_funcs.models import BigQueryTable
 from bigquery_funcs.queries import list_datasets_query
@@ -24,9 +28,11 @@ assert (
 ), {"given": query_str, "expected": expected}
 
 
+client = MagicMock(bigquery.Client)
 my_table = BigQueryTable(
     GOOGLE_PROJECT_ID=PROJECT_ID,
     GOOGLE_DATASET_ID="my-dataset",
     GOOGLE_TABLE_ID="my-table",
+    _bq_client=client,
 )
 assert my_table.full_table_id == f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
