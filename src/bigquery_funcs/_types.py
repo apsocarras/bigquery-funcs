@@ -1,9 +1,12 @@
-from collections import namedtuple
-from typing import Literal, TypeAlias, TypedDict
+from typing import Literal, NamedTuple, TypeAlias, TypedDict
 
 SecretContextType: TypeAlias = Literal["local", "google_secrets_manager"]
 BigQueryFuncName: TypeAlias = str
-LatLon = namedtuple("LatLon", ["lat", "lon"])
+
+
+class LatLon(NamedTuple):
+    lat: float
+    lon: float
 
 
 class MatchedCoord(TypedDict):
