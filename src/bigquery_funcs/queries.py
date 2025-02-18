@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from dataclasses import asdict
 from textwrap import dedent
@@ -225,7 +226,7 @@ def join_geospatial(
     ]
 
 
-def search_column_query(
+def search_column_in_dataset_query(
     project_id: str,
     dataset_id: str,
     columns: Sequence[str],
@@ -236,7 +237,7 @@ def search_column_query(
 
     column_like_condition = " OR ".join(
         [
-            f"column_name LIKE %{col}%"
+            f'column_name LIKE "%{col}%"'
             for col in (columns if not isinstance(columns, str) else [columns])
         ]
     )
@@ -252,3 +253,27 @@ def search_column_query(
     """
 
     return query_str
+
+
+def list_datasets_query(
+    project_id: str,
+    region: str = "us",
+) -> str:
+    """
+    >>> list_datasets_query("my-report")
+    SELECT schema_name FROM my-report.`region-us`.`INFORMATION_SCHEMA.SCHEMATA`;
+    """
+    query_str = f"""
+    SELECT schema_name FROM {project_id}.`region-{region}`.`INFORMATION_SCHEMA.SCHEMATA`;
+    """
+    return query_str
+
+
+def display_query_markdown(query_str: str) -> None:
+    try:
+        from IPython.display import Markdown, display
+
+        _ = display(Markdown(f"```sql\n{query_str}\n```"))
+    except ImportError:
+        warnings.warn("IPython is not importable -- check your installation.")
+        return None
