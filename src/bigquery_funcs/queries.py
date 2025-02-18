@@ -263,9 +263,7 @@ def list_datasets_query(
     >>> list_datasets_query("my-report")
     SELECT schema_name FROM my-report.`region-us`.`INFORMATION_SCHEMA.SCHEMATA`;
     """
-    query_str = f"""
-    SELECT schema_name FROM {project_id}.`region-{region}`.`INFORMATION_SCHEMA.SCHEMATA`;
-    """
+    query_str = f"""SELECT schema_name FROM {project_id}.`region-{region}`.`INFORMATION_SCHEMA.SCHEMATA`;"""
     return query_str
 
 
