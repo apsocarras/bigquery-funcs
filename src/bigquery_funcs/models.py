@@ -1,5 +1,5 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import google.cloud.bigquery as bq
 
@@ -30,11 +30,11 @@ class BigQueryTable(SecretSet):
 
     @property
     def schema(self) -> list[bq.SchemaField]:
-        return self.table.schema
+        return self.table.schema  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
 
     def modify_schema(self, new_schema: list[bq.SchemaField]) -> None:
         self.table.schema = new_schema
-        self._bq_client.update_table(self.table, ["schema"])
+        _ = self._bq_client.update_table(self.table, ["schema"])
 
     @property
     def bq_client(self):
@@ -47,7 +47,7 @@ class GeoSpatialJoinArgs:
     geo_lookup_table: BigQueryTable
     lat_column: str = "lat"
     lon_column: str = "lon"
-    new_coords_point_alias: list[str] = ["new_coords"]
+    new_coords_point_alias: str = "new_coords"
     new_coords_cte_name: str = "new_lon_lats"
     geo_lookup_table_point_alias: str = (
         "lonlat_geo"  # alias to combine lat and lon column

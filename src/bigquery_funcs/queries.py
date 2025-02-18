@@ -1,13 +1,13 @@
+from collections.abc import Sequence
 from dataclasses import asdict
 from textwrap import dedent
-from typing import Any, Never, Sequence, overload
+from typing import Never, cast, overload
 
 from functag import warn_str
 from google.cloud.bigquery.exceptions import BigQueryError
 
-from ._types import LatLon, MatchedCoord
-from .models import GeoSpatialJoinArgs
-from .tables import BigQueryTable
+from ._types import LatLon, LonLat, MatchedCoord, OrderedPairs
+from .models import BigQueryTable, GeoSpatialJoinArgs
 
 
 class SchemaError(BigQueryError):
@@ -15,48 +15,51 @@ class SchemaError(BigQueryError):
 
 
 @overload
-def structify(data: Sequence[Sequence[Any]], aliases: str) -> Never: ...
+def structify(data: OrderedPairs, aliases: str) -> Never: ...
 @overload
-def structify(data: Sequence[Sequence[Any]], aliases: Sequence[str]) -> list[str]: ...
+def structify(data: OrderedPairs, aliases: Sequence[str]) -> tuple[str, ...]: ...
 @warn_str("aliases")
 def structify(
-    data: Sequence[Sequence[Any]],
+    data: OrderedPairs,
     aliases: Sequence[str],
-) -> list[str]:
+) -> tuple[str, ...]:
     """
     Convert data into a list of `STRUCT` statements with new aliases to use.
     Aliases are matched to data values by order of appearance.
     """
-    if any(incorrect_lengths := [d for d in data if len(d) != len(aliases)]):
+    if any(incorrect_lengths := [str(d) for d in data if len(d) != len(aliases)]):
         e = ValueError(
             f"Each collection in data must match the number of aliases ({len(aliases)})"
         )
-        e.add_note(incorrect_lengths)
+        e.add_note(", ".join(incorrect_lengths))
         raise e
 
-    return [
+    return tuple(
         "STRUCT("
         + ", ".join([f"{val} AS {alias}" for val, alias in zip(d, aliases)])
         + ")"
         for d in data
-    ]
+    )
 
 
-def pointify(data: Sequence[LatLon]) -> list[str]:
-    return [f"ST_GEOGPOINT({d.lon}, {d.lat})" for d in data]
+def pointify(data: Sequence[LatLon]) -> tuple[str, ...]:
+    return tuple(str(f"ST_GEOGPOINT({d.lon}, {d.lat})") for d in data)
 
 
 @warn_str("aliases")
 def make_unnest_cte(
-    data: Sequence[Sequence[Any]],
+    data: OrderedPairs,
     cte_name: str,
     aliases: Sequence[str],
     value_clause_indent: int = 12,
     as_points: bool = False,
-):
+) -> str:
     """Take sequences of data and make into a CTE"""
     if as_points and all(isinstance(d, LatLon) for d in data):
-        values_clause = (",\n" + (" " * value_clause_indent)).join(pointify(data))
+        data = cast(Sequence[LatLon], data)
+        indent = ", \n" + " " * value_clause_indent
+        values_clause: str = indent.join(pointify(data))
+
         cte_str = dedent(f"""
         WITH {cte_name} AS (
             SELECT * 
@@ -89,13 +92,13 @@ def make_unnest_cte(
 
 @warn_str("aliases")
 def make_filter_query(
-    data: Sequence[Sequence[Any]],
+    data: OrderedPairs,
     aliases: Sequence[str],
     cte_name: str,
     table: BigQueryTable,
     cte_alias: str = "b",
     table_alias: str = "a",
-):
+) -> str:
     cte = make_unnest_cte(
         data=data, cte_name=cte_name, aliases=aliases, as_points=False
     )
@@ -116,8 +119,8 @@ def filter_coords(
     geo_lookup_table: BigQueryTable,
     lat_column: str = "lat",
     lon_column: str = "lon",
-):
-    lon_lat_ordered = [(d.lon, d.lat) for d in coords]
+) -> tuple[LatLon, ...]:
+    lon_lat_ordered = [LonLat(d.lon, d.lat) for d in coords]
     query_str = make_filter_query(
         data=lon_lat_ordered,
         aliases=[lon_column, lat_column],
@@ -126,7 +129,9 @@ def filter_coords(
     )
     query_job = geo_lookup_table._bq_client.query(query_str)
     results = query_job.result()
-    new_lat_lons = [LatLon(lat=row[lat_column], lon=row[lon_column]) for row in results]
+    new_lat_lons = tuple(
+        LatLon(lat=row[lat_column], lon=row[lon_column]) for row in results
+    )
     coords_to_lookup = new_lat_lons
 
     return coords_to_lookup
@@ -148,7 +153,7 @@ def make_geospatial_join_query(args: GeoSpatialJoinArgs) -> str:
     new_coord_cte_query = make_unnest_cte(
         data=args.coords,
         cte_name=new_cte_name,
-        aliases=new_point,
+        aliases=(new_point,),
         as_points=True,
     )
 
@@ -198,10 +203,9 @@ def join_geospatial(
             lat_column=args.lat_column,
             lon_column=args.lon_column,
         )
-        old_args = {k: v for k, v in asdict(args).items() if k != "coords"}
-        coords_to_lookup = GeoSpatialJoinArgs(
-            {**old_args, **{"coords": filtered_coords}}
-        )
+        old_args = asdict(args)
+        old_args["coords"] = filtered_coords
+        coords_to_lookup = GeoSpatialJoinArgs(**old_args)
     else:
         coords_to_lookup = args
 
@@ -225,7 +229,7 @@ def search_column_query(
     project_id: str,
     dataset_id: str,
     columns: Sequence[str],
-):
+) -> str:
     """
     Query to search for all tables in a dataset which contain a given column or set of columns.
     """

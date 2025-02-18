@@ -1,7 +1,6 @@
 import os
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Optional, Union
 
 from dotenv import load_dotenv
 from google.auth.exceptions import DefaultCredentialsError
@@ -17,9 +16,9 @@ class MissingSecretsError(Exception):
 
 def load_env_secrets(
     context: SecretContextType,
-    env_path: Optional[Union[str, Path]] = None,
-    project_id: Optional[str] = None,
-    service_account_key_path: Optional[Union[str, Path]] = None,
+    env_path: str | Path | None = None,
+    project_id: str | None = None,
+    service_account_key_path: str | Path | None = None,
     enforce_env_var: bool = False,
 ) -> None:
     """Load env vars either from a local .env or google cloud secrets manager (GCSM)
@@ -37,8 +36,9 @@ def load_env_secrets(
         ValueError: If A.) GOOGLE_APPLICATION_CREDENTIALS .env variable, and B.) service_account_key_path, are missing for 'google_secrets_manager' context.
         ValueError: If Google Cloud authentication fails.
     """
-
-    # Load the environment variables
+    assert context in ("local", "google_secrets_manager"), (
+        f"Invalid value for 'context': {context}"
+    )
     match context:
         case "local":
             if env_path is None:
@@ -46,7 +46,7 @@ def load_env_secrets(
             env_path = Path(env_path)
             if not env_path.exists():
                 raise FileNotFoundError(f".env file not found at {env_path}")
-            load_dotenv(env_path)
+            _ = load_dotenv(env_path)
         case "google_secrets_manager":
             if project_id is None:
                 raise ValueError(
@@ -55,7 +55,7 @@ def load_env_secrets(
             try:
                 # Trying to load env variable or set .json key
                 if service_account_key_path:
-                    credentials = service_account.Credentials.from_service_account_file(
+                    credentials = service_account.Credentials.from_service_account_file(  # pyright: ignore[reportUnknownMemberType]
                         service_account_key_path
                     )
                     client = secretmanager.SecretManagerServiceClient(
@@ -71,10 +71,10 @@ def load_env_secrets(
 
                 parent = f"projects/{project_id}"
 
-                secrets = client.list_secrets(parent=parent)
+                secrets = client.list_secrets(parent=parent)  # pyright: ignore[reportUnknownMemberType]
                 for secret in secrets:
                     secret_name = secret.name.split("/")[-1]
-                    secret_version = client.access_secret_version(
+                    secret_version = client.access_secret_version(  # pyright: ignore[reportUnknownMemberType]
                         name=f"{secret.name}/versions/latest"
                     )
                     secret_payload = secret_version.payload.data.decode("UTF-8")
@@ -85,9 +85,6 @@ def load_env_secrets(
                     "Could not authenticate with Google Cloud. Ensure credentials are set up correctly."
                 )
 
-        case _:
-            raise ValueError(f"Invalid value for 'context': {context}")
-
 
 @dataclass
 class SecretSet:
@@ -95,9 +92,9 @@ class SecretSet:
     def from_env(
         cls,
         secret_context: SecretContextType,
-        env_path: Optional[Union[str, Path]] = None,
-        project_id: Optional[str] = None,
-        service_account_key_path: Optional[Union[str, Path]] = None,
+        env_path: str | Path | None = None,
+        project_id: str | None = None,
+        service_account_key_path: str | Path | None = None,
     ):
         load_env_secrets(
             context=secret_context,
