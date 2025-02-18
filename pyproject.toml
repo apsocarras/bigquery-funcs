@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.27.1",
     "ipykernel>=6.29.5",
     "pytest>=8.3.4",
     "python-dotenv>=1.0.1",
