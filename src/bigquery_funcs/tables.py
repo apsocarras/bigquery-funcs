@@ -40,31 +40,3 @@ class BigQueryTable(SecretSet):
         return self._bq_client
 
 
-def search_columns(
-    bq_client: bigquery.Client,
-    project_id: str,
-    dataset_id: str,
-    columns: Sequence[str],
-):
-    """
-    Search for all tables in a dataset which contain a given column or set of columns.
-    """
-
-    column_like_condition = " OR ".join(
-        [
-            f"column_name LIKE %{col}%"
-            for col in (columns if not isinstance(columns, str) else [columns])
-        ]
-    )
-
-    query_str = f"""
-    SELECT 
-        column_name,
-        ARRAY_AGG(DISTINCT table_name ORDER BY table_name) AS table_names
-    FROM `{project_id}.{dataset_id}.INFORMATION_SCHEMA.COLUMNS`
-    WHERE {column_like_condition}
-    GROUP BY column_name
-    ORDER BY column_name ASC;
-    """
-
-    bq_client.query(query_str)
