@@ -43,7 +43,7 @@ def structify(
     )
 
 
-def pointify(data: Sequence[LatLon]) -> tuple[str, ...]:
+def pointify(data: Sequence[LatLon] | Sequence[LonLat]) -> tuple[str, ...]:
     return tuple(str(f"ST_GEOGPOINT({d.lon}, {d.lat})") for d in data)
 
 
