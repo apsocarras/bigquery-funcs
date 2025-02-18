@@ -1,9 +1,11 @@
+from bigquery_funcs.auth import ApplicationCredentials
+from bigquery_funcs.models import BigQueryTable
+from bigquery_funcs.queries import list_datasets_query
+
 PROJECT_ID = "my-project"
 DATASET_ID = "my-dataset"
 TABLE_ID = "my-table"
 
-
-from bigquery_funcs.auth import ApplicationCredentials
 
 value_error = False
 try:
@@ -13,7 +15,6 @@ except ValueError:
 
 assert value_error
 
-from bigquery_funcs.queries import list_datasets_query
 
 query_str = list_datasets_query(project_id=PROJECT_ID)
 expected = f"""SELECT schema_name FROM {PROJECT_ID}.`region-us`.`INFORMATION_SCHEMA.SCHEMATA`;"""
@@ -22,7 +23,6 @@ assert (
     == f"""SELECT schema_name FROM {PROJECT_ID}.`region-us`.`INFORMATION_SCHEMA.SCHEMATA`;"""
 ), {"given": query_str, "expected": expected}
 
-from bigquery_funcs.models import BigQueryTable
 
 my_table = BigQueryTable(
     GOOGLE_PROJECT_ID=PROJECT_ID,
