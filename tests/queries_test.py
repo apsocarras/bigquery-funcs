@@ -1,5 +1,6 @@
 import pytest
 from faker import Faker
+from faker.proxy import Faker
 
 from bigquery_funcs._types import LatLon
 from bigquery_funcs.queries import structify
