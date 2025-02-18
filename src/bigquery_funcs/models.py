@@ -14,7 +14,7 @@ class BigQueryTable(SecretSet):
     GOOGLE_TABLE_ID: str
 
     # _ <- tells SecretSet to ignore this field
-    _bq_client: bq.Client = bq.Client()
+    _bq_client: bq.Client
 
     @property
     def full_table_id(self) -> str:
