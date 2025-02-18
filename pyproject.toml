@@ -5,7 +5,9 @@ description = "BigQuery functions and/or classes, helper scipts, etc. I commonly
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "functag>=1.2.6",
     "google-cloud-bigquery>=3.29.0",
+    "google-cloud-secret-manager>=2.23.0",
 ]
 
 [dependency-groups]

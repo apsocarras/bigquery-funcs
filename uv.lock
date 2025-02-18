@@ -28,7 +28,9 @@ name = "bigquery-funcs"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "functag" },
     { name = "google-cloud-bigquery" },
+    { name = "google-cloud-secret-manager" },
 ]
 
 [package.dev-dependencies]
@@ -39,7 +41,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "google-cloud-bigquery", specifier = ">=3.29.0" }]
+requires-dist = [
+    { name = "functag", specifier = ">=1.2.6" },
+    { name = "google-cloud-bigquery", specifier = ">=3.29.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.23.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -191,6 +197,15 @@ wheels = [
 ]
 
 [[package]]
+name = "functag"
+version = "1.2.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/79/06f45b6f314fd769df126d3336e661db4ac304a7db791879003ad6f81064/functag-1.2.6.tar.gz", hash = "sha256:3b04bacc05f934507d990897e887157c8ebd50251ffc304416730cfd73c935ce", size = 27223 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b3/e1/8d381b69fdd48a3c68349d672841e0846de9390e37c9926e0843972d258b/functag-1.2.6-py3-none-any.whl", hash = "sha256:ced5a5b2e67c14c73c92c16d3634ce8a699fe2bc22111d0a89d3f4266d09e58c", size = 4067 },
+]
+
+[[package]]
 name = "google-api-core"
 version = "2.24.1"
 source = { registry = "https://pypi.org/simple" }
@@ -258,6 +273,22 @@ wheels = [
 ]
 
 [[package]]
+name = "google-cloud-secret-manager"
+version = "2.23.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpc-google-iam-v1" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/a4/eebd85bf4a02371eaa2305f121411336cd5d559653adc162adfcc594c475/google_cloud_secret_manager-2.23.0.tar.gz", hash = "sha256:0249f433b6f0899b5e2adfc495e5b2d4a76c484937cad7c27e2b374bebf8f248", size = 262581 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/85/b629bbb730977cf52908fdc44dcefab86dcb6b1b562bf3e2a385608d25d3/google_cloud_secret_manager-2.23.0-py2.py3-none-any.whl", hash = "sha256:fc4c28dd3e932b89d1057100c6625686a43b5ca26e6dd73ffea2afbfbbc97209", size = 213550 },
+]
+
+[[package]]
 name = "google-crc32c"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -292,6 +323,25 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/31/e1/fbffb85a624f1404133b5bb624834e77e0f549e2b8548146fe18c56e1411/googleapis_common_protos-1.67.0.tar.gz", hash = "sha256:21398025365f138be356d5923e9168737d94d46a72aefee4a6110a1f23463c86", size = 57344 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/89/30/2bd0eb03a7dee7727cd2ec643d1e992979e62d5e7443507381cce0455132/googleapis_common_protos-1.67.0-py2.py3-none-any.whl", hash = "sha256:579de760800d13616f51cf8be00c876f00a9f146d3e6510e19d1f4111758b741", size = 164985 },
+]
+
+[package.optional-dependencies]
+grpc = [
+    { name = "grpcio" },
+]
+
+[[package]]
+name = "grpc-google-iam-v1"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "googleapis-common-protos", extra = ["grpc"] },
+    { name = "grpcio" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/47/2f/68e43b0e551974fa7dd18798a5974710586a72dc484ecaa2fc023d961342/grpc_google_iam_v1-0.14.0.tar.gz", hash = "sha256:c66e07aa642e39bb37950f9e7f491f70dad150ac9801263b42b2814307c2df99", size = 18327 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/b4/ab54f7fda4af43ca5c094bc1d6341780fd669c44ae18952b5337029b1d98/grpc_google_iam_v1-0.14.0-py2.py3-none-any.whl", hash = "sha256:fb4a084b30099ba3ab07d61d620a0d4429570b13ff53bd37bac75235f98b7da4", size = 27276 },
 ]
 
 [[package]]
