@@ -43,7 +43,7 @@ jobs:
           if [ $RUNNER_OS != 'Windows' ]; then
             source .venv/bin/activate
           else
-            .venv\Scripts\activate
+            source .venv\\Scripts\\activate
           fi
           uv pip install -e . 
         shell: bash
