@@ -35,5 +35,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+        with: 
+          python-version-file: ".python-version"
+      - name: Create venv 
+      - run: uv venv && source .venv/bin/activate 
+      - name: Install package 
       - run: uv pip install -e .
+      - name: Run tests
       - run: uv run pytest tests/
