@@ -1,10 +1,12 @@
+import datetime as dt
 from collections.abc import Sequence
 from dataclasses import dataclass, fields
 from typing import Any
 
 import google.cloud.bigquery as bq
+from google.cloud.bigquery.job import _AsyncJob
 
-from ._types import LatLon
+from ._types import DateTimeFormatter, JsonRows, LatLon
 from .auth import SecretSet
 
 
@@ -16,6 +18,14 @@ class BigQueryTable(SecretSet):
 
     # _ <- tells SecretSet to ignore this field
     _bq_client: bq.Client
+
+    @property
+    def time_zone(self) -> dt.timezone:
+        return dt.timezone.utc
+
+    @property
+    def datetime_formatter(self) -> DateTimeFormatter:
+        return lambda x: x.isoformat()
 
     @property
     def full_table_id(self) -> str:
@@ -40,6 +50,23 @@ class BigQueryTable(SecretSet):
     @property
     def bq_client(self):
         return self._bq_client
+
+    def load_rows(
+        self,
+        data: JsonRows,
+        add_timestamp: bool = True,
+    ) -> _AsyncJob:
+        if add_timestamp:
+            date_added = self.datetime_formatter(dt.datetime.now(self.time_zone))
+            for row in data:
+                row["date_added"] = date_added
+
+        job_config = bq.LoadJobConfig(schema=self.schema)
+        job = self.bq_client.load_table_from_json(
+            json_rows=data, destination=self.table, job_config=job_config
+        )
+        result = job.result()
+        return result
 
 
 @dataclass
