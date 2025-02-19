@@ -1,5 +1,6 @@
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+from typing import Any
 
 import google.cloud.bigquery as bq
 
@@ -48,7 +49,7 @@ class GeoSpatialJoinArgs:
     lat_column: str = "lat"
     lon_column: str = "lon"
     new_coords_point_alias: str = "new_coords"
-    new_coords_cte_name: str = "new_lon_lats"
+    new_coords_cte_name: str = "new_coords_cte"
     geo_lookup_table_point_alias: str = (
         "lonlat_geo"  # alias to combine lat and lon column
     )
@@ -56,3 +57,7 @@ class GeoSpatialJoinArgs:
     country_column: str = "country"
     city_column: str = "city"
     state_column: str = "state"
+
+    @classmethod
+    def defaults(cls) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
+        return {field.name: field.default for field in fields(GeoSpatialJoinArgs)}

@@ -1,10 +1,17 @@
 import logging
+from unittest.mock import MagicMock
 
 import pytest
 from faker import Faker
+from google.cloud.bigquery import Client
 
 from bigquery_funcs._types import LatLon
-from bigquery_funcs.queries import make_unnest_cte, structify
+from bigquery_funcs.models import BigQueryTable, GeoSpatialJoinArgs
+from bigquery_funcs.queries import (
+    make_geospatial_join_query,
+    make_unnest_cte,
+    structify,
+)
 
 from . import logging_config
 from .utils import are_same_parsed_query, is_valid_query
@@ -33,6 +40,42 @@ def rand_lat_lons() -> tuple[LatLon, ...]:
     return coords
 
 
+@pytest.fixture
+def mock_bq_client() -> MagicMock:
+    return MagicMock(Client)
+
+
+@pytest.fixture
+def mock_bq_table(mock_bq_client: MagicMock) -> BigQueryTable:
+    """NOTE: this won't work for functions which invoke methods on the client"""
+    return BigQueryTable(
+        GOOGLE_PROJECT_ID="my-project",
+        GOOGLE_DATASET_ID="my-dataset",
+        GOOGLE_TABLE_ID="my-geospatial-table",
+        _bq_client=mock_bq_client,
+    )
+
+
+@pytest.fixture
+def join_args_known_lat_lons(
+    mock_bq_table: MagicMock, known_lat_lons: tuple[LatLon, ...]
+) -> GeoSpatialJoinArgs:
+    return GeoSpatialJoinArgs(
+        coords=known_lat_lons,
+        geo_lookup_table=mock_bq_table,
+    )
+
+
+@pytest.fixture
+def join_args_rand_lat_lons(
+    mock_bq_table: MagicMock, rand_lat_lons: tuple[LatLon, ...]
+) -> GeoSpatialJoinArgs:
+    return GeoSpatialJoinArgs(
+        coords=rand_lat_lons,
+        geo_lookup_table=mock_bq_table,
+    )
+
+
 def test_structify(
     rand_lat_lons: tuple[LatLon, ...], known_lat_lons: tuple[LatLon, ...]
 ) -> None:
@@ -55,11 +98,13 @@ def test_make_unnest_cte_query(
     rand_lat_lons: tuple[LatLon, ...],
     known_lat_lons: tuple[LatLon, ...],
 ) -> None:
-    cte_name = "latlon_cte"
-    aliases = ["point"]
+    cte_name: str = GeoSpatialJoinArgs.defaults()["new_coords_cte_name"]
+    aliases: tuple[str] = (GeoSpatialJoinArgs.defaults()["new_coords_point_alias"],)
 
     ## Test with a known set of points
-    result_cte = make_unnest_cte(known_lat_lons, cte_name, aliases, as_points=True)
+    result_cte = make_unnest_cte(
+        data=known_lat_lons, cte_name=cte_name, aliases=aliases, as_points=True
+    )
     expected_cte = f"""
         {cte_name} AS (
             SELECT * 
@@ -105,6 +150,20 @@ def test_make_unnest_cte_query(
     )
     is_valid, error_msg = is_valid_query(f"WITH {result_cte} SELECT * FROM {cte_name}")
     assert is_valid, error_msg
+
+
+def test_make_geospatial_join_query(
+    join_args_rand_lat_lons: GeoSpatialJoinArgs,
+    join_args_known_lat_lons: GeoSpatialJoinArgs,
+) -> None:
+    # Test validity w/ random lat lons
+    query_str = make_geospatial_join_query(args=join_args_rand_lat_lons)
+    logger.debug(query_str)
+
+    is_valid, error_msg = is_valid_query(query_str)
+    assert is_valid, error_msg
+
+    # TODO: Test results with example data
 
 
 logging_config

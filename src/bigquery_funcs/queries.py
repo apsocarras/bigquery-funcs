@@ -1,11 +1,11 @@
 import warnings
 from collections.abc import Sequence
 from dataclasses import asdict
-from textwrap import dedent
 from typing import Never, cast, overload
 
 from functag import warn_str
 from google.cloud.bigquery.exceptions import BigQueryError
+from jinja2 import Template
 
 from ._types import LatLon, LonLat, MatchedCoord, OrderedPairs
 from .models import BigQueryTable, GeoSpatialJoinArgs
@@ -59,36 +59,49 @@ def make_unnest_cte(
     if as_points and all(isinstance(d, LatLon) for d in data):
         data = cast(Sequence[LatLon], data)
         indent = ", \n" + " " * value_clause_indent
-        values_clause: str = indent.join(pointify(data))
+        point_strs = pointify(data)
 
-        cte_str = dedent(f"""
-        {cte_name} AS (
-            SELECT * 
+        template_str = """
+        {{ cte_name }} AS (
+            SELECT *
             FROM UNNEST([
-                {values_clause}
-            ]) {aliases[0]}
+                {%- for value in point_strs %}
+                {{ value }}{% if not loop.last %}, {% endif %}{%- endfor %}
+            ]) AS new_coords
         )
-        """).strip()
-        return cte_str
+        """
+        template = Template(template_str.strip())
+        rendered_query = template.render(
+            cte_name=cte_name, aliases=aliases, point_strs=point_strs
+        )
+        return rendered_query
     else:
         if not aliases:
             raise ValueError(
                 "Must provide aliases unless processing a special type (LatLon)"
             )
-
-        values_clause = (",\n" + (" " * value_clause_indent)).join(
-            structify(data=data, aliases=aliases)
-        )
-        cte_str = dedent(f"""
-        {cte_name} AS (
-            SELECT {",".join(aliases)}
+        template_str = """
+        {{ cte_name }} AS (
+            SELECT {{ aliases | join(', ')}}
             FROM UNNEST([
-                {values_clause}
-            ]) 
+                {% for value in struct_values %}
+                    {{ indent }}{{ value }}{% if not loop.last %}, {% endif %}
+                {% endfor %}            
+            ])
         )
-        """).strip()
+        """
+        struct_values: tuple[str, ...] = structify(data=data, aliases=aliases)
+        indent = " " * value_clause_indent
 
-        return cte_str
+        template = Template(template_str.strip())
+        rendered_query = template.render(
+            cte_name=cte_name,
+            aliases=aliases,
+            struct_values=struct_values,
+            indent=indent,
+        )
+
+        return rendered_query
 
 
 @warn_str("aliases")
@@ -103,14 +116,21 @@ def make_filter_query(
     cte = make_unnest_cte(
         data=data, cte_name=cte_name, aliases=aliases, as_points=False
     )
+    select_columns = ", ".join([f"{cte_alias}.{alias}" for alias in aliases])
+    join_conditions = " AND ".join(
+        [f"{table_alias}.{alias} = {cte_alias}.{alias}" for alias in aliases]
+    )
+    where_conditions = " AND ".join(
+        [f"{table_alias}.{alias} IS NULL" for alias in aliases]
+    )
     query_str = f"""
     WITH {cte}
 
-    SELECT {", ".join([f"{cte_alias}.{alias}" for alias in aliases])}
+    SELECT {select_columns}
     FROM {cte_name} as {cte_alias}
     LEFT JOIN `{table.full_table_id}` as {table_alias} 
-    ON {" AND ".join([f"{table_alias}.{alias} = {cte_alias}.{alias}" for alias in aliases])}  
-    WHERE {" AND ".join([f"{table_alias}.{alias} IS NULL" for alias in aliases])}
+    ON {join_conditions}  
+    WHERE {where_conditions}
     """
     return query_str
 
