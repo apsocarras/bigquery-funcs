@@ -62,7 +62,7 @@ def make_unnest_cte(
         values_clause: str = indent.join(pointify(data))
 
         cte_str = dedent(f"""
-        WITH {cte_name} AS (
+        {cte_name} AS (
             SELECT * 
             FROM UNNEST([
                 {values_clause}
@@ -80,7 +80,7 @@ def make_unnest_cte(
             structify(data=data, aliases=aliases)
         )
         cte_str = dedent(f"""
-        WITH {cte_name} AS (
+        {cte_name} AS (
             SELECT {",".join(aliases)}
             FROM UNNEST([
                 {values_clause}
@@ -104,7 +104,7 @@ def make_filter_query(
         data=data, cte_name=cte_name, aliases=aliases, as_points=False
     )
     query_str = f"""
-    {cte}
+    WITH {cte}
 
     SELECT {", ".join([f"{cte_alias}.{alias}" for alias in aliases])}
     FROM {cte_name} as {cte_alias}
@@ -170,7 +170,7 @@ def make_geospatial_join_query(args: GeoSpatialJoinArgs) -> str:
     """
 
     query_str = f"""
-    {new_coord_cte_query}, 
+    WITH {new_coord_cte_query}, 
     {lookup_cte_query} 
 
     SELECT {new_point}, {args.city_column}, {args.state_column}, {args.country_column}
