@@ -17,6 +17,8 @@ OrderedPairs: TypeAlias = Sequence[
     Sequence[str] | Sequence[float] | Sequence[int] | Sequence[complex]
 ]
 
+FullTableID: TypeAlias = str
+
 
 class LatLon(NamedTuple):
     lat: float

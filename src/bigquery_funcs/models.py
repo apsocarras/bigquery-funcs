@@ -3,21 +3,18 @@ from collections.abc import Sequence
 from dataclasses import dataclass, fields
 from typing import Any
 
-import google.cloud.bigquery as bq
+import google.cloud.bigquery as bigquery
 from google.cloud.bigquery.job import _AsyncJob
 
-from ._types import DateTimeFormatter, JsonRows, LatLon
-from .auth import SecretSet
+from ._types import DateTimeFormatter, FullTableID, JsonRows, LatLon
 
 
 @dataclass
-class BigQueryTable(SecretSet):
+class BigQueryTable:
     GOOGLE_PROJECT_ID: str
     GOOGLE_DATASET_ID: str
     GOOGLE_TABLE_ID: str
-
-    # _ <- tells SecretSet to ignore this field
-    _bq_client: bq.Client
+    bq_client: bigquery.Client
 
     @property
     def time_zone(self) -> dt.timezone:
@@ -32,24 +29,38 @@ class BigQueryTable(SecretSet):
         return f"{self.GOOGLE_PROJECT_ID.lower()}.{self.GOOGLE_DATASET_ID.lower()}.{self.GOOGLE_TABLE_ID.lower()}"
 
     @property
-    def table(self) -> bq.Table:
-        table_ref = self._bq_client.dataset(self.GOOGLE_DATASET_ID).table(
+    def table(self) -> bigquery.Table:
+        table_ref = self.bq_client.dataset(self.GOOGLE_DATASET_ID).table(
             self.GOOGLE_TABLE_ID
         )
-        table = self._bq_client.get_table(table_ref)
+        table = self.bq_client.get_table(table_ref)
         return table
 
     @property
-    def schema(self) -> list[bq.SchemaField]:
+    def table_schema(self) -> list[bigquery.SchemaField]:
         return self.table.schema  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
 
-    def modify_schema(self, new_schema: list[bq.SchemaField]) -> None:
+    def modify_schema(self, new_schema: list[bigquery.SchemaField]) -> None:
         self.table.schema = new_schema
-        _ = self._bq_client.update_table(self.table, ["schema"])
+        _ = self.bq_client.update_table(self.table, ["schema"])
 
-    @property
-    def bq_client(self):
-        return self._bq_client
+    @classmethod
+    def from_full_table_id(
+        cls, id: FullTableID, bq_client: bigquery.Client
+    ) -> "BigQueryTable":
+        try:
+            project_id, dataset_id, table_id = id.split(".")
+        except ValueError:
+            raise ValueError(f"Failed to split table id {id}")
+
+        table = BigQueryTable(
+            GOOGLE_PROJECT_ID=project_id,
+            GOOGLE_DATASET_ID=dataset_id,
+            GOOGLE_TABLE_ID=table_id,
+            bq_client=bq_client,
+        )
+
+        return table
 
     def load_rows(
         self,
@@ -61,7 +72,7 @@ class BigQueryTable(SecretSet):
             for row in data:
                 row["date_added"] = date_added
 
-        job_config = bq.LoadJobConfig(schema=self.schema)
+        job_config = bigquery.LoadJobConfig(schema=self.table_schema)
         job = self.bq_client.load_table_from_json(
             json_rows=data, destination=self.table, job_config=job_config
         )

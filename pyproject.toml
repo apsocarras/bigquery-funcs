@@ -1,6 +1,6 @@
 [project]
 name = "bigquery_funcs"
-version = "0.1.0"
+version = "1.0.0"
 description = "BigQuery functions and/or classes, helper scipts, etc. I commonly use when working with the Python SDK"
 readme = "README.md"
 requires-python = ">=3.12"

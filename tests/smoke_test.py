@@ -35,6 +35,6 @@ my_table = BigQueryTable(
     GOOGLE_PROJECT_ID=PROJECT_ID,
     GOOGLE_DATASET_ID="my-dataset",
     GOOGLE_TABLE_ID="my-table",
-    _bq_client=client,
+    bq_client=client,
 )
 assert my_table.full_table_id == f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
