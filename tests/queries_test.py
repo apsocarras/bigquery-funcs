@@ -52,7 +52,7 @@ def mock_bq_table(mock_bq_client: MagicMock) -> BigQueryTable:
         GOOGLE_PROJECT_ID="my-project",
         GOOGLE_DATASET_ID="my-dataset",
         GOOGLE_TABLE_ID="my-geospatial-table",
-        _bq_client=mock_bq_client,
+        bq_client=mock_bq_client,
     )
 
 

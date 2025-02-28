@@ -148,7 +148,7 @@ def filter_coords(
         cte_name="new_lon_lats",
         table=geo_lookup_table,
     )
-    query_job = geo_lookup_table._bq_client.query(query_str)
+    query_job = geo_lookup_table.bq_client.query(query_str)
     results = query_job.result()
     new_lat_lons = tuple(
         LatLon(lat=row[lat_column], lon=row[lon_column]) for row in results
@@ -163,7 +163,7 @@ def make_geospatial_join_query(args: GeoSpatialJoinArgs) -> str:
         missing_cols := (
             x
             for x in (args.lat_column, args.lon_column)
-            if x in args.geo_lookup_table.schema
+            if x in args.geo_lookup_table.table_schema
         )
     ):
         raise SchemaError(
@@ -281,7 +281,7 @@ def list_datasets_query(
 ) -> str:
     """
     >>> list_datasets_query("my-report")
-    SELECT schema_name FROM my-report.`region-us`.`INFORMATION_SCHEMA.SCHEMATA`;
+    SELECT schema_name FROM `my-report`.`region-us`.`INFORMATION_SCHEMA.SCHEMATA`;
     """
     query_str = f"""SELECT schema_name FROM {project_id}.`region-{region}`.`INFORMATION_SCHEMA.SCHEMATA`;"""
     return query_str
