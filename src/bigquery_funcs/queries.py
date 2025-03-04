@@ -7,8 +7,8 @@ from functag import warn_str
 from google.cloud.bigquery.exceptions import BigQueryError
 from jinja2 import Template
 
-from ._types import LatLon, LonLat, MatchedCoord, OrderedPairs
-from .models import BigQueryTable, GeoSpatialJoinArgs
+from bigquery_funcs._types import LatLon, LonLat, MatchedCoord, OrderedPairs
+from bigquery_funcs.models import BigQueryTable, GeoSpatialJoinArgs
 
 
 class SchemaError(BigQueryError):
@@ -247,9 +247,7 @@ def join_geospatial(
 
 
 def search_column_in_dataset_query(
-    project_id: str,
-    dataset_id: str,
-    columns: Sequence[str],
+    project_id: str, dataset_id: str, columns: Sequence[str], exact: bool = False
 ) -> str:
     """
     Query to search for all tables in a dataset which contain a given column or set of columns.
@@ -257,22 +255,29 @@ def search_column_in_dataset_query(
 
     column_like_condition = " OR ".join(
         [
-            f'column_name LIKE "%{col}%"'
+            "column_name " + (f'LIKE "%{col}%"' if not exact else f'= "{col}"')
             for col in (columns if not isinstance(columns, str) else [columns])
         ]
     )
 
-    query_str = f"""
+    query_str = """
     SELECT 
         column_name,
         ARRAY_AGG(DISTINCT table_name ORDER BY table_name) AS table_names
-    FROM `{project_id}.{dataset_id}.INFORMATION_SCHEMA.COLUMNS`
-    WHERE {column_like_condition}
+    FROM `{{ project_id }}.{{ dataset_id }}.INFORMATION_SCHEMA.COLUMNS`
+    WHERE {{ column_like_condition }}
     GROUP BY column_name
     ORDER BY column_name ASC;
     """
 
-    return query_str
+    template = Template(query_str.strip())
+    rendered_template = template.render(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        column_like_condition=column_like_condition,
+    )
+
+    return rendered_template
 
 
 def list_datasets_query(
